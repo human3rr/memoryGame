@@ -1,7 +1,7 @@
 const canvasWidth = 400
 const canvasHeight = 400
 //Want even number of rows and columns 
-const cardRows = 2
+const cardRows = 4
 const cardCols = cardRows
 const numberOfCards = cardRows * cardCols
 const squareMaxWidth = canvasWidth / cardCols
@@ -22,18 +22,29 @@ function Card(id, img, x = 0, y = 0, width = 0){
     if(this.xCoordinate < mouseX && mouseX < (this.xCoordinate + this.cardWidth )){
       //console.log({"xStart":this.xCoordinate, "xEnd": this.xCoordinate + this.cardWidth, "mouseX" : mouseX})
       if(this.yCoordinate < mouseY && mouseY < (this.yCoordinate + this.cardWidth)){
-
         console.log({"clicked": this.id})
-        //this.cardColor = '#FFFFFF'
+        this.cardColor = '#FFFFFF'
+        return true
       }
       //console.log({"yStart":this.yCoordinate, "yEnd": this.yCoordinate + this.cardWidth, "mouseY" : mouseY})
-
     }
+    return false
   }
   this.xCoordinate =  x
   this.yCoordinate =  y
   this.cardWidth = width
   this.cardColor = '#222222'
+}
+
+const clickState = {
+  clickIds: [],
+  foundMatch: function(){
+    //Remove cards if matches are found
+    cards = cards.filter(card => card.id != this.clickIds[0])
+    cards = cards.filter(card => card.id != this.clickIds[1])
+    //probably increment a counter or some shit for the game state
+  }
+
 }
 
 function getRndmFromSet(set)
@@ -83,13 +94,23 @@ function setup() {
 }
   console.log(cards)
 }
+
 function mousePressed(){
   console.log({"mouseX": mouseX})
   console.log({"mouseY": mouseY})
+  let clickedId = -1
   for (const card of cards) {
-    card.clicked()
+    if(card.clicked()){
+      clickState.clickIds.push(card.id)
+      if(clickState.clickIds.length >= 2){
+        //if(Math.abs(clickState.clickIds[0] - clickState.clickIds[1]) == 1)
+        console.log({"clickState.clickIds": clickState.clickIds})
+        clickState.clickIds = []
+      }
+    }
   }
 }
+
 function draw() {
   background(220);
   for (const card of cards) {
