@@ -14,6 +14,7 @@ let cards = []
 
 let gameState = {
   winner:false,
+  tryCount: 0,
 }
 
 //constructor function
@@ -41,15 +42,16 @@ function Card(id, img, x = 0, y = 0, width = 0){
   this.yCoordinate =  y
   this.cardWidth = width
   this.cardColor = '#222222'
+  this.currentlyClicked = false
 }
 
 let cardImages = [];
-
 let winnerGifs = [];
 
 const main = document.getElementById("main");
 var myRect = main.getBoundingClientRect();
 console.log(myRect)
+
 function preload(){
   for(let i = 0; i < numberOfCards/2; i++){
     console.log(`./memory/cats/cat-${i+1}.jpg`)
@@ -100,11 +102,7 @@ function shuffle(array) {
 
   return array;
 }
-
-
-function setup() {
-  createCanvas(canvasWidth, canvasHeight);
-
+function initializeCardListWithIds(){
   let id = 1;
   for(let i = 1; i <= numberOfCards; i++){
     cards.push(new Card(id, cardImages[id-1]))
@@ -112,8 +110,8 @@ function setup() {
       id++
     }
   }
-  cards = shuffle(cards)
-
+}
+function setupCardPlacementAndDimensions(){
   //Convoluted way to set the coordinate of each card
   /*
   Basic idea is this:
@@ -133,48 +131,82 @@ function setup() {
       console.log(cards[j + i * cardRows])
     }
   }
+}
+function setupCards(){
+  cards = []
+  initializeCardListWithIds()
+  cards = shuffle(cards)
+  setupCardPlacementAndDimensions()
   console.log(cards)
+}
+
+
+function cardClickedHandle(card){
+  if(card.clicked() && card.currentlyClicked == false){
+    card.currentlyClicked = true;
+    //Want to keep track of the card pushed as well as id,
+    //Otherwise you can click the same image twice to reveal match
+    clickState.clickIds.push(card.id)
+    if(clickState.clickIds.length >= 2){
+      clickState.allowedToClick = false
+      //if true, removes cards from the gameboard
+      if(clickState.clickIds[0] == clickState.clickIds[1]){
+        clickState.foundMatch()
+        clickState.allowedToClick = true;
+      }else{
+        //Give user some time to view the 2nd card flipped over
+        setTimeout(() => {
+          //Reverts cards to showing back of card
+          for (const card of cards) {
+            card.cardColor = '#222222'
+            card.isFlippedUp = false
+            card.currentlyClicked = false
+          }
+          clickState.allowedToClick = true;
+        }, cardFlippedOverTime)
+      }
+
+      console.log({"clickState.clickIds": clickState.clickIds})
+      clickState.clickIds = []
+      if(cards.length == 0){
+        gameState.winner = true
+      }
+    }
+  }
 }
 
 function mousePressed(){
   if(clickState.allowedToClick != true){
     return
   }
-  console.log({"mouseX": mouseX})
-  console.log({"mouseY": mouseY})
+  console.log({"mouseX": mouseX, "mouseY": mouseY})
   for (const card of cards) {
-    if(card.clicked()){
-      clickState.clickIds.push(card.id)
-      if(clickState.clickIds.length >= 2){
-        clickState.allowedToClick = false
-        //if(Math.abs(clickState.clickIds[0] - clickState.clickIds[1]) == 1)
-
-        //if true, removes cards from the gameboard
-        if(clickState.clickIds[0] == clickState.clickIds[1]){
-          clickState.foundMatch()
-          clickState.allowedToClick = true;
-        }else{
-          //Give user some time to view the 2nd card flipped over
-          setTimeout(() => {
-            //Reverts cards to showing back of card
-            for (const card of cards) {
-              card.cardColor = '#222222'
-              card.isFlippedUp = false
-            }
-            clickState.allowedToClick = true;
-          }, cardFlippedOverTime)
-        }
-
-        console.log({"clickState.clickIds": clickState.clickIds})
-        clickState.clickIds = []
-        if(cards.length == 0){
-          gameState.winner = true
-        }
-      }
-    }
+    cardClickedHandle(card)
   }
 }
 
+
+function setup() {
+  createCanvas(canvasWidth, canvasHeight);
+  setupCards();
+}
+
+function winnerScreen(){
+  fill(0)
+  textSize(32);
+  winnerPhrase = 'WINNER'
+  textAlign(CENTER);
+  text(winnerPhrase, canvasWidth/2, 30);  
+  //console.log(rect.top, rect.right, rect.bottom, rect.left);  
+  
+  winnerGifs[0].position(myRect.left - winnerGifs[0].width/2, myRect.top - winnerGifs[0].height/2);
+  //winnerGifs[0].size(winnerGifs[0].width*2, winnerGifs[0].height*2);
+
+  winnerGifs[0].size(400, 400);
+  //console.log(winnerGifs[0].width*2)
+  //console.log(winnerGifs[0].height*2)
+  winnerGifs[0].elt.style.display = ""; 
+}
 function draw() {
   background(220);
   for (const card of cards) {
@@ -186,24 +218,6 @@ function draw() {
     }
   }
   if(gameState.winner == true){
-    fill(0)
-    textSize(32);
-    winnerPhrase = 'WINNER'
-    textAlign(CENTER);
-    text(winnerPhrase, canvasWidth/2, 30);
-    //console.log("winner")
-    
-    //console.log(rect.top, rect.right, rect.bottom, rect.left);  
-    winnerGifs[0].position(myRect.left - winnerGifs[0].width/2, myRect.top - winnerGifs[0].height/2);
-    //winnerGifs[0].size(winnerGifs[0].width*2, winnerGifs[0].height*2);
-
-    winnerGifs[0].size(400, 400);
-    console.log(winnerGifs[0].width*2)
-    console.log(winnerGifs[0].height*2)
-    winnerGifs[0].elt.style.display = ""; 
-
-
+    winnerScreen()
   }
-  //console.log({"mouseX": mouseX})
-  //console.log({"mouseY": mouseY})
 }
