@@ -1,7 +1,7 @@
-const canvasWidth = 400
-const canvasHeight = 400
+const canvasWidth = 600
+const canvasHeight = 600
 //Want even number of rows and columns 
-const cardRows = 4
+const cardRows = 2
 const cardCols = cardRows
 const numberOfCards = cardRows * cardCols
 const squareMaxWidth = canvasWidth / cardCols
@@ -10,6 +10,12 @@ const squareMaxHeight = canvasHeight / cardRows
 const cardFlippedOverTime = 1000
 //Array for starting deck of cards
 let cards = []
+
+
+let gameState = {
+  winner:false,
+}
+
 //constructor function
 function Card(id, img, x = 0, y = 0, width = 0){
   this.isFlippedUp = false
@@ -23,6 +29,7 @@ function Card(id, img, x = 0, y = 0, width = 0){
       //console.log({"xStart":this.xCoordinate, "xEnd": this.xCoordinate + this.cardWidth, "mouseX" : mouseX})
       if(this.yCoordinate < mouseY && mouseY < (this.yCoordinate + this.cardWidth)){
         console.log({"clicked": this.id})
+        this.isFlippedUp = true
         this.cardColor = '#FFFFFF'
         return true
       }
@@ -34,6 +41,34 @@ function Card(id, img, x = 0, y = 0, width = 0){
   this.yCoordinate =  y
   this.cardWidth = width
   this.cardColor = '#222222'
+}
+
+let cardImages = [];
+
+let winnerGifs = [];
+
+const main = document.getElementById("main");
+var myRect = main.getBoundingClientRect();
+console.log(myRect)
+function preload(){
+  for(let i = 0; i < numberOfCards/2; i++){
+    console.log(`./memory/cats/cat-${i+1}.jpg`)
+    cardImages[i] = loadImage(`./memory/cats/cat-${i+1}.jpg`)
+  }
+  shuffle(cardImages)
+  //console.log(cardImages)
+
+  winnerGifs[0] = createImg("./memory/winners/winner-1.gif");
+  console.log(winnerGifs[0])
+  //console.log(main)
+  //winnerGifs[0].elt.id = "winnerGif"; 
+  //const wG = document.getElementById("winnerGif");
+
+  //main.appendChild(wG)
+
+  winnerGifs[0].elt.style.display = "none"; 
+  //console.log(winnerGifs[0])
+
 }
 
 const clickState = {
@@ -72,7 +107,7 @@ function setup() {
 
   let id = 1;
   for(let i = 1; i <= numberOfCards; i++){
-    cards.push(new Card(id, null))
+    cards.push(new Card(id, cardImages[id-1]))
     if(i % 2 == 0){
       id++
     }
@@ -97,10 +132,9 @@ function setup() {
       console.log({"i": i, "j": j, "j + i * cardRows":j + i * cardRows})
       console.log(cards[j + i * cardRows])
     }
-}
+  }
   console.log(cards)
 }
-
 
 function mousePressed(){
   if(clickState.allowedToClick != true){
@@ -114,14 +148,18 @@ function mousePressed(){
       if(clickState.clickIds.length >= 2){
         clickState.allowedToClick = false
         //if(Math.abs(clickState.clickIds[0] - clickState.clickIds[1]) == 1)
+
+        //if true, removes cards from the gameboard
         if(clickState.clickIds[0] == clickState.clickIds[1]){
           clickState.foundMatch()
           clickState.allowedToClick = true;
         }else{
           //Give user some time to view the 2nd card flipped over
           setTimeout(() => {
+            //Reverts cards to showing back of card
             for (const card of cards) {
               card.cardColor = '#222222'
+              card.isFlippedUp = false
             }
             clickState.allowedToClick = true;
           }, cardFlippedOverTime)
@@ -129,7 +167,9 @@ function mousePressed(){
 
         console.log({"clickState.clickIds": clickState.clickIds})
         clickState.clickIds = []
-        
+        if(cards.length == 0){
+          gameState.winner = true
+        }
       }
     }
   }
@@ -139,7 +179,30 @@ function draw() {
   background(220);
   for (const card of cards) {
     fill(card.cardColor);
-    square(card.xCoordinate, card.yCoordinate, card.cardWidth);
+    if(card.isFlippedUp){
+      image(card.img, card.xCoordinate, card.yCoordinate, card.cardWidth, card.cardWidth);
+    }else{
+      square(card.xCoordinate, card.yCoordinate, card.cardWidth);
+    }
+  }
+  if(gameState.winner == true){
+    fill(0)
+    textSize(32);
+    winnerPhrase = 'WINNER'
+    textAlign(CENTER);
+    text(winnerPhrase, canvasWidth/2, 30);
+    //console.log("winner")
+    
+    //console.log(rect.top, rect.right, rect.bottom, rect.left);  
+    winnerGifs[0].position(myRect.left - winnerGifs[0].width/2, myRect.top - winnerGifs[0].height/2);
+    //winnerGifs[0].size(winnerGifs[0].width*2, winnerGifs[0].height*2);
+
+    winnerGifs[0].size(400, 400);
+    console.log(winnerGifs[0].width*2)
+    console.log(winnerGifs[0].height*2)
+    winnerGifs[0].elt.style.display = ""; 
+
+
   }
   //console.log({"mouseX": mouseX})
   //console.log({"mouseY": mouseY})
