@@ -1,20 +1,93 @@
 const canvasWidth = 600
 const canvasHeight = 600
 //Want even number of rows and columns 
-const cardRows = 2
-const cardCols = cardRows
-const numberOfCards = cardRows * cardCols
-const squareMaxWidth = canvasWidth / cardCols
-const squareMaxHeight = canvasHeight / cardRows  
+let maxNumberOfCards = 36
+let cardRows = 4
+let cardCols = cardRows
+let numberOfCards = cardRows * cardCols
+let squareMaxWidth = canvasWidth / cardCols
+let squareMaxHeight = canvasHeight / cardRows  
 
 const cardFlippedOverTime = 1000
 //Array for starting deck of cards
 let cards = []
 
+const main = document.getElementById("main");
+var myRect = main.getBoundingClientRect();
+console.log(myRect)
+
+const tryCount = document.getElementById("tryCount");
+const matches = document.getElementById("matches");
+const difficulty = document.getElementById("difficulty");
+
+difficulty.addEventListener('change', function() {
+  console.log('You selected: ', this.value);
+  switch(this.value) {
+    case "easy":
+      console.log("easy peasy")
+      cardRows = 2
+      break;
+    case "medium":
+      console.log("medium steak")
+      cardRows = 4
+      // code block
+      break;
+    default:
+      console.log("hard lard")
+      cardRows = 6
+        // code block
+    }
+    setup()
+});
+
 
 let gameState = {
   winner:false,
   tryCount: 0,
+  matches: 0,
+}
+let cardImages = [];
+let winnerGif;
+const clickState = {
+  clickIds: [],
+  allowedToClick: true,
+  foundMatch: function(){
+    //Remove cards if matches are found
+    cards = cards.filter(card => card.id != this.clickIds[0])
+    cards = cards.filter(card => card.id != this.clickIds[1])
+    //probably increment a counter or some shit for the game state
+  }
+}
+function initializeVariables(){
+  clickState.clickIds = []
+  clickState.allowedToClick = true
+  gameState.winner = false
+  gameState.matches = 0
+  gameState.tryCount = 0
+  winnerGif.elt.style.display = "none";
+  tryCount.innerHTML = gameState.tryCount
+  matches.innerHTML = gameState.matches
+
+  cardCols = cardRows
+  numberOfCards = cardRows * cardCols
+  squareMaxWidth = canvasWidth / cardCols
+  squareMaxHeight = canvasHeight / cardRows  
+}
+const resetBtn = document.getElementById("resetBtn");
+resetBtn.addEventListener("click", resetGame)
+
+function resetGame(){
+  setupCards()
+  initializeVariables()
+}
+
+function incrementTryCount(){
+  gameState.tryCount += 1;
+  tryCount.innerHTML = gameState.tryCount
+}
+function incrementMatchs(){
+  gameState.matches += 1;
+  matches.innerHTML = gameState.matches
 }
 
 //constructor function
@@ -45,43 +118,20 @@ function Card(id, img, x = 0, y = 0, width = 0){
   this.currentlyClicked = false
 }
 
-let cardImages = [];
-let winnerGifs = [];
 
-const main = document.getElementById("main");
-var myRect = main.getBoundingClientRect();
-console.log(myRect)
 
 function preload(){
-  for(let i = 0; i < numberOfCards/2; i++){
+  for(let i = 0; i < maxNumberOfCards/2; i++){
     console.log(`./memory/cats/cat-${i+1}.jpg`)
     cardImages[i] = loadImage(`./memory/cats/cat-${i+1}.jpg`)
   }
   shuffle(cardImages)
   //console.log(cardImages)
 
-  winnerGifs[0] = createImg("./memory/winners/winner-1.gif");
-  console.log(winnerGifs[0])
-  //console.log(main)
-  //winnerGifs[0].elt.id = "winnerGif"; 
-  //const wG = document.getElementById("winnerGif");
-
-  //main.appendChild(wG)
-
-  winnerGifs[0].elt.style.display = "none"; 
-  //console.log(winnerGifs[0])
-
-}
-
-const clickState = {
-  clickIds: [],
-  allowedToClick: true,
-  foundMatch: function(){
-    //Remove cards if matches are found
-    cards = cards.filter(card => card.id != this.clickIds[0])
-    cards = cards.filter(card => card.id != this.clickIds[1])
-    //probably increment a counter or some shit for the game state
-  }
+  winnerGif = createImg("./memory/winners/winner-1.gif");
+  console.log(winnerGif)
+  //Dont display element on page
+  winnerGif.elt.style.display = "none"; 
 
 }
 
@@ -102,6 +152,7 @@ function shuffle(array) {
 
   return array;
 }
+
 function initializeCardListWithIds(){
   let id = 1;
   for(let i = 1; i <= numberOfCards; i++){
@@ -111,6 +162,7 @@ function initializeCardListWithIds(){
     }
   }
 }
+
 function setupCardPlacementAndDimensions(){
   //Convoluted way to set the coordinate of each card
   /*
@@ -148,9 +200,11 @@ function cardClickedHandle(card){
     //Otherwise you can click the same image twice to reveal match
     clickState.clickIds.push(card.id)
     if(clickState.clickIds.length >= 2){
+      incrementTryCount()
       clickState.allowedToClick = false
       //if true, removes cards from the gameboard
       if(clickState.clickIds[0] == clickState.clickIds[1]){
+        incrementMatchs()
         clickState.foundMatch()
         clickState.allowedToClick = true;
       }else{
@@ -188,25 +242,32 @@ function mousePressed(){
 
 function setup() {
   createCanvas(canvasWidth, canvasHeight);
+  initializeVariables()
   setupCards();
+
 }
 
-function winnerScreen(){
+function winnerScreen(textSz){
   fill(0)
-  textSize(32);
+  textSize(textSz);
   winnerPhrase = 'WINNER'
   textAlign(CENTER);
-  text(winnerPhrase, canvasWidth/2, 30);  
-  //console.log(rect.top, rect.right, rect.bottom, rect.left);  
+  text(winnerPhrase, canvasWidth/2, 50);  
+  text(winnerPhrase, canvasWidth/2, canvasHeight - 50);  
   
-  winnerGifs[0].position(myRect.left - winnerGifs[0].width/2, myRect.top - winnerGifs[0].height/2);
-  //winnerGifs[0].size(winnerGifs[0].width*2, winnerGifs[0].height*2);
-
-  winnerGifs[0].size(400, 400);
-  //console.log(winnerGifs[0].width*2)
-  //console.log(winnerGifs[0].height*2)
-  winnerGifs[0].elt.style.display = ""; 
+  myRect = main.getBoundingClientRect();
+  //console.log({"top": myRect.top,"right": myRect.right, "bottom":myRect.bottom, "left":myRect.left});  
+  //console.log(myRect)
+  //winnerGif.position(myRect.left - winnerGif.width/2, myRect.top - winnerGif.height/2);
+  console.log(winnerGif.height)
+  winnerGif.position(myRect.left + (myRect.right - myRect.left)/2 - winnerGif.width/2,
+                    (myRect.bottom + myRect.top)/2  - winnerGif.height/2);
+  //winnerGif.position(myRect.x, myRect.y);
+  winnerGif.size(400, 400);
+  winnerGif.elt.style.display = ""; 
 }
+
+let i = 0 
 function draw() {
   background(220);
   for (const card of cards) {
@@ -218,6 +279,12 @@ function draw() {
     }
   }
   if(gameState.winner == true){
-    winnerScreen()
+    winnerScreen(i)
   }
+  if(i > 40){
+    i = 0
+  }else{
+    i++
+  }
+
 }

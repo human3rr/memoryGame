@@ -6,4 +6,9 @@ body{
     height: 100%;
     margin: 0;
     padding: 0;
+    flex-direction: column;
+}
+
+#tryCount, #matches{
+    display: inline;
 }
